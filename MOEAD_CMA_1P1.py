@@ -49,10 +49,6 @@ class ECMA:
         self._t = 0
         self._moment = np.zeros(self._dim, float)
 
-    @property
-    def cvm(self):
-        return self._sgm * self._C
-
     def sample(self):
         for _ in range(100):
             x = self.mean + self._sgm * self._A.dot(standard_normal(self._dim))
@@ -62,8 +58,7 @@ class ECMA:
 
     def update(self, x, x_repaired, f, g0, g):
         suc = 1. if g0 < self.g else 0.
-        p_succ = float(suc) / self._lambda
-        self._psucc = (1. - self._cp) * self._psucc + self._cp * p_succ
+        self._psucc = (1. - self._cp) * self._psucc + self._cp * float(suc) / self._lambda
 
         if suc > 0.:
             x_step = (x - self.mean) / self._sgm
@@ -124,7 +119,6 @@ class MOEAD_CMA_1P1:
         self._lambda = self._lambda[np.argsort(-np.var(self._lambda, axis=1))]
         dist = euclidean_distances(self._lambda, self._lambda)
         self._B = np.argsort(dist, axis=1)[:, :4 + math.floor(3 * math.log(self._D))]
-        self._w = self._lambda.copy()
         if decomp == 'TCH':
             self.decompose = ASF()  # Tchebicheff()
         elif decomp == 'PBI':
@@ -151,7 +145,7 @@ class MOEAD_CMA_1P1:
         g = self.decompose.do(f, self._lambda, utopian_point=self._z, _type="many_to_many")
 
         g0 = np.diag(g) + alpha * penalty
-        cluster = np.argmin(cosine_distances(f - self._z, self._w), axis=1)
+        cluster = np.argmin(cosine_distances(f - self._z, self._lambda), axis=1)
 
         for i in range(self._N):
             self._cma[i].g = self.decompose.do(self._cma[i].f, self._lambda[i], utopian_point=self._z)[0, 0]
@@ -184,5 +178,5 @@ class MOEAD_CMA_1P1:
             if verbose and not self._gen % 10:
                 print('gen: {}, hv:{}, {:.2f}s'.format(self._gen, self._hv(f), time.time() - tiktok))
                 tiktok = time.time()
-        return hist  # , time.time() - tock
+        return hist
 
