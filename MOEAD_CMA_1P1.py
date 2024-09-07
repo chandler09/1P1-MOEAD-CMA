@@ -100,8 +100,6 @@ class MOEAD_CMA_1P1:
         np.random.seed(seed)
         self._p = problem
         self._N = N
-        self._M = problem.n_obj
-        self._D = problem.n_var
         self._z = np.array(Z)
         self._M, self._D = problem.n_obj, problem.n_var
         self._xl, self._xu = problem.xl, problem.xu
@@ -116,9 +114,9 @@ class MOEAD_CMA_1P1:
 
         n_partitions = get_partition_closest_to_points(N, problem.n_obj)
         self._lambda = get_reference_directions("uniform", n_dim=problem.n_obj, n_partitions=n_partitions)
-        self._lambda = self._lambda[np.argsort(-np.var(self._lambda, axis=1))]
+        self._lambda = self._lambda[np.argsort(-np.var(self._lambda, axis=1))]  # preference
         dist = euclidean_distances(self._lambda, self._lambda)
-        self._B = np.argsort(dist, axis=1)[:, :4 + math.floor(3 * math.log(self._D))]
+        self._B = np.argsort(dist, axis=1)[:, :4 + math.floor(3 * math.log(self._D))]  # neighborhood
         if decomp == 'TCH':
             self.decompose = ASF()  # Tchebicheff()
         elif decomp == 'PBI':
