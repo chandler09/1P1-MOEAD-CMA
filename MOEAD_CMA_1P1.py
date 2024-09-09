@@ -99,7 +99,6 @@ class MOEAD_CMA_1P1:
         """
         np.random.seed(seed)
         self._p = problem
-        self._N = N
         self._z = np.array(Z)
         self._M, self._D = problem.n_obj, problem.n_var
         self._xl, self._xu = problem.xl, problem.xu
@@ -121,6 +120,7 @@ class MOEAD_CMA_1P1:
             self.decompose = ASF()  # Tchebicheff()
         elif decomp == 'PBI':
             self.decompose = PBI(theta=theta)
+        self._N = len(self._lambda)  # population size
         self._cma = [ECMA(self._xl, self._xu, f=np.full(problem.n_obj, np.inf, float)) for _ in range(self._N)]
         pop = np.vstack([self._cma[i].mean for i in range(self._N)])
         f = self._evaluate(pop)
