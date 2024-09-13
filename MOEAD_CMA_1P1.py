@@ -105,7 +105,7 @@ class MOEAD_CMA_1P1:
 
         self._evals = 0
         self._gen = 0
-        self._hv = HV(ref_point=np.array(Z) + .1)
+        self._hv = HV(ref_point=1.1 * np.array(Z))
         self._igd = None
         if hasattr(problem, 'pareto_front'):
             pf = problem.pareto_front(500 if self._M == 2 else 990)
@@ -114,8 +114,6 @@ class MOEAD_CMA_1P1:
         n_partitions = get_partition_closest_to_points(N, problem.n_obj)
         self._lambda = get_reference_directions("uniform", n_dim=problem.n_obj, n_partitions=n_partitions)
         self._lambda = self._lambda[np.argsort(-np.var(self._lambda, axis=1))]  # preference
-        dist = euclidean_distances(self._lambda, self._lambda)
-        self._B = np.argsort(dist, axis=1)[:, :4 + math.floor(3 * math.log(self._D))]  # neighborhood
         if decomp == 'TCH':
             self.decompose = ASF()  # Tchebicheff()
         elif decomp == 'PBI':
@@ -164,15 +162,16 @@ class MOEAD_CMA_1P1:
     def get_cma_f_means(self):
         return np.array([es.f for es in self._cma])
 
-    def solve(self, n_eval, verbose=True):
-        hist = {'f': [], 'x': [], 'f_mu': [], 'mu': []}
+    def solve(self, n_evals, verbose=True, light_log=True):
+        hist = {'f': []} if light_log else {'f': [], 'x': [], 'fm': [], 'm': []}
         tiktok = time.time()
-        while self._evals < n_eval:
+        while self._evals < n_evals:
             pop, f = self._evolve()
             hist['f'].append(f)  # objective values of the current population
-            hist['x'].append(pop)  # current population
-            hist['f_mu'].append(self.get_cma_f_means())  # objective values of the means of the CMAs
-            hist['mu'].append(self.get_cma_means())  # means of the CMAs
+            if not light_log:
+                hist['x'].append(pop)  # current population
+                hist['fm'].append(self.get_cma_f_means())  # objective values of the means of the CMAs
+                hist['m'].append(self.get_cma_means())  # means of the CMAs
             if verbose and not self._gen % 10:
                 print('gen: {}, hv:{}, {:.2f}s'.format(self._gen, self._hv(f), time.time() - tiktok))
                 tiktok = time.time()
